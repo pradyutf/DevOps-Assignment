@@ -1,0 +1,8 @@
+# Namespace - Logical isolation for our application
+# WHY? Keeps our resources separate from others in the cluster
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: todo-app
+  labels:
+    app: todo-api

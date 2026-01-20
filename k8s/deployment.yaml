@@ -1,0 +1,70 @@
+# Deployment - Manages our application pods
+# WHY? Handles scaling, rolling updates, self-healing
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-api
+  namespace: todo-app
+  labels:
+    app: todo-api
+spec:
+  # Number of pod instances to run
+  replicas: 2
+  
+  # How Deployment finds its pods
+  selector:
+    matchLabels:
+      app: todo-api
+  
+  # Pod template - what each pod looks like
+  template:
+    metadata:
+      labels:
+        app: todo-api
+    spec:
+      containers:
+        - name: todo-api
+          # Image will be updated by CD pipeline
+          image: pradyutf/todo-api:latest
+          
+          # Port the container listens on
+          ports:
+            - containerPort: 3001
+          
+          # Environment variables
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "3001"
+          
+          # Resource limits (prevent runaway containers)
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          
+          # Liveness Probe - Is container alive?
+          # If fails, K8s restarts the container
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          
+          # Readiness Probe - Is container ready for traffic?
+          # If fails, K8s stops sending traffic to this pod
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3

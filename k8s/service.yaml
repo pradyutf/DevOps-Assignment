@@ -1,0 +1,23 @@
+# Service - Exposes our pods to network traffic
+# WHY? Pods have dynamic IPs, Service provides stable endpoint
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-api-service
+  namespace: todo-app
+  labels:
+    app: todo-api
+spec:
+  # NodePort - Accessible from outside cluster on node's IP
+  # Other options: ClusterIP (internal only), LoadBalancer (cloud)
+  type: NodePort
+  
+  # Which pods to route traffic to
+  selector:
+    app: todo-api
+  
+  ports:
+    - protocol: TCP
+      port: 80           # Service port (internal)
+      targetPort: 3001   # Container port
+      nodePort: 30001    # External port (30000-32767 range)
