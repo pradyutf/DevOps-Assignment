@@ -1,0 +1,31 @@
+# Dependencies - installed fresh in container
+node_modules
+
+# Build output - built fresh in container
+dist
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+
+# Test coverage
+coverage
+
+# Logs
+*.log
+logs
+
+# Environment files (may contain secrets)
+.env
+.env.*
+
+# Documentation
+*.md
+
+# CI/CD
+.github
