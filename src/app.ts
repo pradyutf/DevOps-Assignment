@@ -45,7 +45,7 @@ app.get('/health', (_req: Request, res: Response) => {
 app.get('/', (_req: Request, res: Response) => {
   res.json({
     name: 'Todo API',
-    version: '1.0.0',
+    version: '2.0.0',
     description: 'Production-grade Todo API with CI/CD Pipeline',
     endpoints: {
       health: 'GET /health',
