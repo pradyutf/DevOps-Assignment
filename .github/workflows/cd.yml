@@ -1,4 +1,4 @@
-# CD Pipeline - Deploy to Kubernetes
+# CD Pipeline - Deploy to Kubernetes (Local via Self-Hosted Runner)
 name: CD - Deploy to Kubernetes
 
 on:
@@ -8,10 +8,13 @@ on:
       - completed
   workflow_dispatch:
 
+env:
+  DOCKER_IMAGE: pradyutf/todo-api
+
 jobs:
   deploy:
     name: Deploy to Kubernetes
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
 
     steps:
@@ -23,11 +26,16 @@ jobs:
         with:
           version: 'v1.29.0'
 
-      - name: Configure Kubeconfig
-        run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
-          chmod 600 ~/.kube/config
+      # Kubeconfig not needed for local Docker Desktop K8s
+      # Uncomment below for cloud K8s (AWS EKS, GKE, etc.)
+      # - name: Configure Kubeconfig
+      #   run: |
+      #     mkdir -p ~/.kube
+      #     echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+      #     chmod 600 ~/.kube/config
+
+      - name: Pull image from DockerHub
+        run: docker pull ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
 
       - name: Deploy to Kubernetes
         run: |
@@ -35,14 +43,27 @@ jobs:
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
 
+      - name: Update deployment image
+        run: |
+          kubectl set image deployment/todo-api todo-api=${{ env.DOCKER_IMAGE }}:${{ github.sha }} -n todo-app
+
       - name: Verify Deployment
         run: |
-          kubectl get pods -n todo-app
-          kubectl get svc -n todo-app
           kubectl rollout status deployment/todo-api -n todo-app --timeout=2m
+          kubectl get pods -n todo-app
 
-      - name: Run Dummy DAST Scan
-        uses: zaproxy/action-baseline@v0.9.0
-        with:
-          target: http://localhost:3001
-        continue-on-error: true
+      - name: Test Application
+        run: |
+          sleep 10
+          echo "--- Health Check ---"
+          curl -s http://localhost:30001/health
+          echo ""
+          echo "--- App Info ---"
+          curl -s http://localhost:30001/
+
+      # DAST - Uncomment when deploying to a reachable URL
+      # - name: Run DAST Scan
+      #   uses: zaproxy/action-baseline@v0.9.0
+      #   with:
+      #     target: http://localhost:30001
+      #   continue-on-error: true
